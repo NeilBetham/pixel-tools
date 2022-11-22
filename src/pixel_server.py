@@ -52,7 +52,7 @@ class Pixels():
         for index in range(len(PIXELS)):
             byte_index = index * 3
             PIXELS.set_led(index, frame[byte_index] << 16 | frame[byte_index + 1] << 8 | frame[byte_index + 2])
-        PIXELS.render()
+        return self.render()
 
 
 PIXELS = Pixels(PIXEL_COUNT, 18)
