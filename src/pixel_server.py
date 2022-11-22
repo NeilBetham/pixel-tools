@@ -46,6 +46,7 @@ class Pixels():
 
     def render(self):
         resp = ws.ws2811_render(self._leds)
+        ws.ws2811_wait(self._leds)
         return resp == ws.WS2811_SUCCESS
 
     def set_frame(self, frame):
