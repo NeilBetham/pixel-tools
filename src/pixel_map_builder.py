@@ -72,7 +72,7 @@ class POVIter():
         self._povs_path = povs_path
         ret_dir = os.getcwd()
         os.chdir(povs_path)
-        self._pov_count = len(glob.glob("**"))
+        self._pov_count = len(glob.glob("[0-9]"))
         os.chdir(ret_dir)
         self._current_pov = 0
 
@@ -105,21 +105,28 @@ class PairIter():
         else:
             raise StopIteration
 
-def process_photo(photo):
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(photo.frame())
-    annotated = photo.color_frame()
+def process_photo(baseline, photo):
+    rotated = cv2.rotate(photo.frame(), cv2.ROTATE_90_CLOCKWISE)
+    diff = cv2.subtract(rotated, baseline)
+    diff_blurred = cv2.GaussianBlur(diff, (11, 11), 0)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(diff_blurred)
+    annotated = diff_blurred.copy()
     annotated = cv2.drawMarker(annotated, max_loc, (255, 100, 100), cv2.MARKER_CROSS, thickness=2)
-#    cv2.imwrite(photo.output_path("rect"), annotated)
+    cv2.imwrite(photo.output_path("anno"), annotated)
+    cv2.imwrite(photo.output_path("diff"), diff_blurred)
     return (max_loc, max_val)
 
 def process_pov(pov_path):
+    print("Processing POV: {}".format(pov_path))
     photo_iter = PixelPhotoIter(pov_path)
     light_centers = []
     normalized_light_centers = []
+    baseline = cv2.imread(os.path.join(pov_path, "baseline.png"), flags=cv2.IMREAD_GRAYSCALE)
+    baseline_rot =cv2.rotate(baseline, cv2.ROTATE_90_CLOCKWISE)
 
     # First find all the approximate light centers in each image
     for photo in photo_iter:
-        light_center = process_photo(photo)
+        light_center = process_photo(baseline_rot, photo)
         light_centers.append((int(photo.index()), light_center))
 
     return light_centers
@@ -162,12 +169,14 @@ def localize_pixels(light_centers, base_dimensions):
             pov2_intensity = light_centers[pov_minus][pixel_index][1][1]
 
         # Calc tree frame 3D coord in picture space
-        # POV 0 is assumed to be front and the ordering is counter clockwise around the tree from the top down perspective
+        # POV 0 is assumed to be front and the ordering is clockwise around the tree from the top down perspective
         # Image 0,0 is upper left corner
         # TODO: Handle any number of POVs
         xcoord = -1
         ycoord = -1
         zcoord = -1
+
+        print(base_dimensions)
 
         if pov1 == 0:
             # This POV is contributing to the X coordinate
@@ -177,10 +186,10 @@ def localize_pixels(light_centers, base_dimensions):
             ycoord = light_centers[pov1][pixel_index][1][0][0]
         elif pov1 == 2:
             # This POV is contributing to the X coordinate in the inverse direction
-            xcoord = base_dimensions[1] - light_centers[pov1][pixel_index][1][0][0]
+            xcoord = base_dimensions[0] - light_centers[pov1][pixel_index][1][0][0]
         elif pov1 == 3:
             # This POV is contributing to the Y coordinate in the inverse direction
-            ycoord = base_dimensions[1] - light_centers[pov1][pixel_index][1][0][0]
+            ycoord = base_dimensions[0] - light_centers[pov1][pixel_index][1][0][0]
 
         if pov2 == 0:
             # This POV is contributing to the X coordinate
@@ -190,15 +199,15 @@ def localize_pixels(light_centers, base_dimensions):
             ycoord = light_centers[pov2][pixel_index][1][0][0]
         elif pov2 == 2:
             # This POV is contributing to the X coordinate in the inverse direction
-            xcoord = base_dimensions[1] - light_centers[pov2][pixel_index][1][0][0]
+            xcoord = base_dimensions[0] - light_centers[pov2][pixel_index][1][0][0]
         elif pov2 == 3:
             # This POV is contributing to the Y coordinate in the inverse direction
-            ycoord = base_dimensions[1] - light_centers[pov2][pixel_index][1][0][0]
+            ycoord = base_dimensions[0] - light_centers[pov2][pixel_index][1][0][0]
 
         zcoord = (light_centers[pov1][pixel_index][1][0][1] + light_centers[pov2][pixel_index][1][0][1]) / 2
         zcoord = base_dimensions[0] - zcoord
 
-        pixel_coords.append((pixel_index, (xcoord, ycoord, zcoord)))
+        pixel_coords.append((pixel_index, (xcoord, ycoord, zcoord, pov1, pov2)))
 
     return pixel_coords
 
@@ -287,11 +296,11 @@ def pixel_coord_correction(pixel_coords):
                 gap_length = gap[1] - gap[0]
                 index_in_gap = pixel_coord[0] - gap[0]
                 gap_percentage = index_in_gap / gap_length
-                gap_start = np.array(pixel_coords[gap[0]][1])
-                gap_end = np.array(pixel_coords[gap[1]][1])
+                gap_start = np.array(pixel_coords[gap[0]][1][0:3])
+                gap_end = np.array(pixel_coords[gap[1]][1][0:3])
                 gap_diff = (gap_end - gap_start) * gap_percentage
                 coord_new = gap_start + gap_diff
-                fixed_pixels.append((pixel_coord[0], tuple(coord_new)))
+                fixed_pixels.append((pixel_coord[0], tuple(coord_new) + tuple([pixel_coord[1][3], pixel_coord[1][4]])))
                 break
         if len(fixed_pixels) <= pixel_coord[0]:
             fixed_pixels.append(pixel_coord)
@@ -300,9 +309,9 @@ def pixel_coord_correction(pixel_coords):
 
 def output_pixel_map_csv(pixel_coords, outfile_name):
     outfile = open(outfile_name, 'w')
-    outfile.write("index, x, y, z\n")
+    outfile.write("index, x, y, z, pov1, pov2\n")
     for pixel_coord in pixel_coords:
-        outfile.write("%i, %i, %i, %i\n" % (pixel_coord[0], pixel_coord[1][0], pixel_coord[1][1], pixel_coord[1][2]))
+        outfile.write("%i, %i, %i, %i, %i, %i\n" % (pixel_coord[0], pixel_coord[1][0], pixel_coord[1][1], pixel_coord[1][2], pixel_coord[1][3], pixel_coord[1][4]))
     outfile.close()
 
 

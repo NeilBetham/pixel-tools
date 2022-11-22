@@ -8,7 +8,7 @@ import time
 
 from pixel_client import PixelClient
 
-PIXEL_LOCATION_CSV = "pixel_map.filtered.csv"
+PIXEL_LOCATION_CSV = "pixel_map.raw.csv"
 LOOP_TIME = 1 / 30
 
 class Pixel():
@@ -63,7 +63,7 @@ class PixelMap():
             for line in pixel_map:
                 if 'index' in line:
                     continue
-                index, x, y, z = line.split(',')
+                index, x, y, z, pov1, pov2 = line.split(',')
                 index = int(index)
                 x = int(x)
                 y = int(y)
@@ -130,7 +130,7 @@ class PlaneWaveEffect():
 
         buffer = bytearray()
         for pixel in self._map:
-            gaussian = self.gaussian(pixel.normalized_coords()[1], self._progress * 1.7 - 1.5)
+            gaussian = self.gaussian(pixel.normalized_coords()[2], self._progress * 1.7 - 1.5)
             intensity_data = self.intensity_data(gaussian)
             buffer.extend(intensity_data)
         return buffer

@@ -16,12 +16,17 @@ MESSAGE_ON = bytes.fromhex("FF" * 3 * PIXEL_COUNT)
 class CameraControl():
     def __init__(self):
         self._available_devices = []
+        cv_window = cv2.namedWindow('Image Window')
 
         for index in range(10):
             cap = cv2.VideoCapture(index)
-            if cap.read()[0]:
-                self._available_devices.append(index)
+            ret, image = cap.read()
+            if ret:
+                cv2.imwrite(os.path.join(os.getcwd(), "pixel_maps/camera-{}.png".format(index)), image)
             cap.release()
+
+        selected_index = int(input("Enter integer index of camera you want to use: "))
+        self.select_device(selected_index)
 
     def available_devices(self):
         return self._available_devices[::]
@@ -60,12 +65,14 @@ class PixelMapper():
 
         for quadrant in range(4):
             print("Imaging Quadrant {}".format(quadrant))
-            self._ps.send_frame(bytes('FFFFFF', 'utf-8')*PIXEL_COUNT)
+            self._ps.send_frame(bytes.fromhex('FFFFFF') * PIXEL_COUNT)
             input("Press enter when ready...")
-            self._ps.send_frame(bytes('000000', 'utf-8')*PIXEL_COUNT)
+            self._ps.send_frame(bytes.fromhex('000000') * PIXEL_COUNT)
+            time.sleep(0.2)
             self._cc.take_image(self.generate_file_name(quadrant, "baseline"))
             for index in range(PIXEL_COUNT):
                 self._ps.send_frame(self.generate_frame('FFFFFF', index))
+                time.sleep(0.2)
                 self._cc.take_image(self.generate_file_name(quadrant, index))
             self._ps.send_frame(MESSAGE_OFF)
 
