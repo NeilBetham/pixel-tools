@@ -35,7 +35,7 @@ class Pixels():
 
     def __del__(self):
         ws.ws2811_fini(self._leds)
-        ws_delete_ws2811_t(self._leds)
+        ws.delete_ws2811_t(self._leds)
 
     def __len__(self):
         return self._pixel_count
