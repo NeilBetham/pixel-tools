@@ -7,6 +7,7 @@ import _rpi_ws281x as ws
 
 PIXEL_COUNT = 500
 BYTE_COUNT = PIXEL_COUNT * 3
+OFF_FRAME = bytes('00') * BYTE_COUNT
 
 class Pixels():
     def __init__(self, pixel_count, pixel_gpio):
@@ -47,18 +48,24 @@ class Pixels():
         resp = ws.ws2811_render(self._leds)
         return resp == ws.WS2811_SUCCESS
 
+    def set_frame(self, frame):
+        for index in range(len(PIXELS)):
+            byte_index = index * 3
+            PIXELS.set_led(index, frame[byte_index] << 16 | frame[byte_index + 1] << 8 | frame[byte_index + 2])
+        PIXELS.render()
+
+
 PIXELS = Pixels(PIXEL_COUNT, 18)
 
 class FrameHandler(socketserver.StreamRequestHandler):
     def handle(self):
         frame = self.rfile.read(BYTE_COUNT)
         while len(frame) > 0:
-            for index in range(len(PIXELS)):
-                byte_index = index * 3
-                PIXELS.set_led(index, frame[byte_index] << 16 | frame[byte_index + 1] << 8 | frame[byte_index + 2])
-            PIXELS.render()
+            PIXELS.set_frame(frame)
             self.wfile.write(bytes('true', 'utf-8'))
             frame = self.rfile.read(BYTE_COUNT)
+        PIXELS.set_frame(OFF_FRAME)
+
 
 def main():
     with socketserver.TCPServer(("0.0.0.0", 7689), FrameHandler) as server:
