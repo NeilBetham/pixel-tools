@@ -7,7 +7,7 @@ import _rpi_ws281x as ws
 
 PIXEL_COUNT = 500
 BYTE_COUNT = PIXEL_COUNT * 3
-OFF_FRAME = bytes('00', 'utf-8') * BYTE_COUNT
+OFF_FRAME = bytes.fromhex('00') * BYTE_COUNT
 
 class Pixels():
     def __init__(self, pixel_count, pixel_gpio):
