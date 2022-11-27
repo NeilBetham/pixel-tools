@@ -7,6 +7,7 @@ import socket
 import time
 
 from pixel_client import PixelClient
+from pixel_sim_client import PixelSimClient
 
 PIXEL_LOCATION_CSV = "pixel_map.raw.csv"
 LOOP_TIME = 1 / 30
@@ -143,7 +144,9 @@ class PlaneWaveEffect():
 
 
 def main():
-    pixel_server = PixelClient()
+#    pixel_server = PixelClient()
+    pixel_server = PixelSimClient("./tree_sim.sock")
+
     pixel_map = PixelMap(os.path.join(os.getcwd(), PIXEL_LOCATION_CSV))
     animator = Animator()
     plane_anim = PlaneWaveEffect(pixel_map, 0.1, 0)
