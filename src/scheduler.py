@@ -33,9 +33,9 @@ def main():
     ts = skyfield.api.load.timescale()
     ephem = skyfield.api.load_file(sys.argv[1])
 
-    lat_lon = os.getenv("TARGET_LATLON")
-    elevation = os.getenv("TARGET_ELEVATION")
-    tz = zoneinfo.ZoneInfo(os.getenv("TARGET_TIMEZONE"))
+    lat_lon = os.getenv("PIXEL_LATLON")
+    elevation = os.getenv("PIXEL_ELEVATION")
+    tz = zoneinfo.ZoneInfo(os.getenv("PIXEL_TIMEZONE"))
     loc_n, loc_w = lat_lon.split(',')
     location = skyfield.api.wgs84.latlon(float(loc_n), float(loc_w), float(elevation))
 

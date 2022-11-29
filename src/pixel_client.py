@@ -11,8 +11,8 @@ class PixelClient():
         self._connect()
 
     def __init__(self):
-        self._ip = os.environ['TARGET_IP']
-        self._port = int(os.environ['TARGET_PORT'])
+        self._ip = os.environ['PIXEL_TARGET_IP']
+        self._port = int(os.environ['PIXEL_TARGET_PORT'])
         self._connect()
 
     def __del__(self):

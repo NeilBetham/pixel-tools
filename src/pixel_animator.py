@@ -66,7 +66,7 @@ def main():
     pixel_server = PixelClient()
 #    pixel_server = PixelSimClient("./tree_sim.sock")
 
-    pixel_map = PixelMap.from_csv(os.getenv("TARGET_PIXEL_MAP"))
+    pixel_map = PixelMap.from_csv(os.getenv("PIXEL_MAP_CSV"))
     plane_anim = PlaneWaveEffect(pixel_map, 0.2, 0)
     animator = Animator(plane_anim, pixel_server, TARGET_FPS)
     animator.run()
