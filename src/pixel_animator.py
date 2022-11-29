@@ -13,7 +13,7 @@ from pixel_client import PixelClient
 from pixel_sim_client import PixelSimClient
 from utils import PixelMap, calc_affine, hsl_to_rgb
 
-TARGET_FPS = 10
+TARGET_FPS = 30
 
 class PlaneWaveEffect():
     def __init__(self, pixel_map, speed, color):
