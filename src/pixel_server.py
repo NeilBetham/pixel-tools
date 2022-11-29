@@ -60,15 +60,18 @@ PIXELS = Pixels(PIXEL_COUNT, 18)
 
 class FrameHandler(socketserver.StreamRequestHandler):
     def handle(self):
-        frame = self.rfile.read(BYTE_COUNT)
-        while len(frame) > 0:
-            PIXELS.set_frame(frame)
-            self.wfile.write(bytes('true', 'utf-8'))
+        try:
             frame = self.rfile.read(BYTE_COUNT)
-        PIXELS.set_frame(OFF_FRAME)
+            while len(frame) > 0:
+                PIXELS.set_frame(frame)
+                self.wfile.write(bytes('true', 'utf-8'))
+                frame = self.rfile.read(BYTE_COUNT)
+        finally:
+            PIXELS.set_frame(OFF_FRAME)
 
 
 def main():
+    PIXELS.set_frame(OFF_FRAME)
     with socketserver.TCPServer(("0.0.0.0", 7689), FrameHandler) as server:
         server.serve_forever()
 
