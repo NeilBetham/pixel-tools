@@ -35,35 +35,40 @@ def calc_affine(rot_x, rot_y, rot_z):
     return np.matmul(np.matmul(base_x, base_y), base_z)
 
 def hsl_to_rgb(hue, saturation, lightness):
+    hue = float(hue)
+    saturation = float(saturation)
+    lightness = float(lightness)
     chroma = lightness * saturation
-    hue_prime = int(math.fmod(hue / 60.0, 6))
-    x = chroma * (1 - math.fabs(math.fmod(hue_prime, 2) - 1.0))
+    hue_prime = math.fmod(hue / 60.0, 6.0)
+    x = chroma * (1.0 - math.fabs(math.fmod(hue_prime, 2.0) - 1.0))
     m = lightness - chroma
     r = 0
     g = 0
     b = 0
 
-    if hue_prime == 0:
+    hue_index = int(hue_prime)
+
+    if hue_index == 0:
         r = chroma
         g = x
         b = 0
-    elif hue_prime == 1:
+    elif hue_index == 1:
         r = x
         g = chroma
         b = 0
-    elif hue_prime == 2:
+    elif hue_index == 2:
         r = 0
         g = chroma
         b = x
-    elif hue_prime == 3:
+    elif hue_index == 3:
         r = 0
         g = x
         b = chroma
-    elif hue_prime == 4:
+    elif hue_index == 4:
         r = x
         g = 0
         b = chroma
-    elif hue_prime == 5:
+    elif hue_index == 5:
         r = chroma
         g = 0
         b = x

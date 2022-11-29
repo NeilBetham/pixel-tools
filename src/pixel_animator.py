@@ -40,8 +40,9 @@ class PlaneWaveEffect():
             self._current_map = self._map.transform(transform_mat)
 
             # Choose a random hue
-            hue = random() * 360
+            hue = random() * 360.0
             self._current_color = hsl_to_rgb(hue, 1.0, 1.0)
+            print(hue, self._current_color)
 
         buffer = bytearray()
         red, green, blue = self._current_color
@@ -63,8 +64,8 @@ class PlaneWaveEffect():
 
 
 def main():
-    pixel_server = PixelClient()
-#    pixel_server = PixelSimClient("./tree_sim.sock")
+    #    pixel_server = PixelClient()
+    pixel_server = PixelSimClient("./tree_sim.sock")
 
     pixel_map = PixelMap.from_csv(os.getenv("PIXEL_MAP_CSV"))
     plane_anim = PlaneWaveEffect(pixel_map, 0.2, 0)
