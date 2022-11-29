@@ -42,7 +42,6 @@ class PlaneWaveEffect():
             # Choose a random hue
             hue = random() * 360.0
             self._current_color = hsl_to_rgb(hue, 1.0, 1.0)
-            print(hue, self._current_color)
 
         buffer = bytearray()
         red, green, blue = self._current_color
