@@ -63,8 +63,10 @@ class PlaneWaveEffect():
 
 
 def main():
-    #    pixel_server = PixelClient()
-    pixel_server = PixelSimClient("./tree_sim.sock")
+    if len(sys.argv) > 1 and sys.argv[1] == 'sim':
+        pixel_server = PixelSimClient("./tree_sim.sock")
+    else:
+        pixel_server = PixelClient()
 
     pixel_map = PixelMap.from_csv(os.getenv("PIXEL_MAP_CSV"))
     plane_anim = PlaneWaveEffect(pixel_map, 0.2, 0)
