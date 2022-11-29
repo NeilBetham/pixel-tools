@@ -8,35 +8,12 @@ import sys
 import time
 from random import random
 
+from animator import Animator
 from pixel_client import PixelClient
 from pixel_sim_client import PixelSimClient
 from utils import PixelMap, calc_affine, hsl_to_rgb
 
-PIXEL_LOCATION_CSV = "pixel_map.raw.csv"
-LOOP_TIME = 1 / 30
-
-# The animator class is responsible for dispatching animations out the different
-# effect classes and then send the result to the pixels
-class Animator():
-    def __init__(self):
-        self._last_anim_exec = time.time()
-        self._anim_target = None
-        self._pixel_target = None
-
-    def animate(self):
-        start_time = time.time()
-        if self._anim_target:
-            pixel_bytes = self._anim_target.animate(start_time - self._last_anim_exec)
-            if self._pixel_target:
-                self._pixel_target.send_frame(pixel_bytes)
-        self._last_anim_exec = start_time
-
-    def set_animator_target(self, target):
-        self._anim_target = target
-
-    def set_pixel_target(self, target):
-        self._pixel_target = target
-
+TARGET_FPS = 10
 
 class PlaneWaveEffect():
     def __init__(self, pixel_map, speed, color):
@@ -89,23 +66,10 @@ def main():
     pixel_server = PixelClient()
 #    pixel_server = PixelSimClient("./tree_sim.sock")
 
-    pixel_map = PixelMap.from_csv(sys.argv[1])
-    animator = Animator()
+    pixel_map = PixelMap.from_csv(os.getenv("TARGET_PIXEL_MAP"))
     plane_anim = PlaneWaveEffect(pixel_map, 0.2, 0)
-    animator.set_pixel_target(pixel_server)
-    animator.set_animator_target(plane_anim)
-
-    while True:
-        start_time = time.time()
-        animator.animate()
-        stop_time = time.time()
-        delta_time = stop_time - start_time
-        sleep_time = LOOP_TIME - delta_time
-        print(sleep_time)
-        if sleep_time > 0:
-            time.sleep(sleep_time)
-
-
+    animator = Animator(plane_anim, pixel_server, TARGET_FPS)
+    animator.run()
 
 if __name__ == "__main__":
     main()

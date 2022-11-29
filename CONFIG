@@ -1,0 +1,8 @@
+# Configure these env vars with you specific setup info
+
+PIXEL_TARGET_IP=""
+PIXEL_TARGET_PORT=""
+PIXEL_LOCATION=""
+PIXEL_ELEVATION=""
+PIXEL_TIMEZONE=""
+PIXEL_MAP_CSV=""
