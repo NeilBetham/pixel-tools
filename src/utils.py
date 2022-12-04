@@ -34,6 +34,15 @@ def calc_affine(rot_x, rot_y, rot_z):
 
     return np.matmul(np.matmul(base_x, base_y), base_z)
 
+def calc_affine2(rot_x, rot_y, rot_z, t_x, t_y, t_z):
+    rot_mat = calc_affine(rot_x, rot_y, rot_z)
+    rot_mat[0][3] = t_x
+    rot_mat[1][3] = t_y
+    rot_mat[2][3] = t_z
+
+    return rot_mat
+
+
 def hsl_to_rgb(hue, saturation, lightness):
     hue = float(hue)
     saturation = float(saturation)
@@ -81,20 +90,17 @@ def hsl_to_rgb(hue, saturation, lightness):
 
 
 class Pixel():
-    def __init__(self, index, min_x, max_x, min_y, max_y, min_z, max_z, x, y, z):
+    def __init__(self, index, x, y, z):
         self._index = index
         self._x = x
         self._y = y
         self._z = z
-        self._x_n = (x - min_x) / (max_x - min_x)
-        self._y_n = (y - min_y) / (max_y - min_y)
-        self._z_n = (z - min_z) / (max_z - min_z)
 
     def coords(self):
         return (self._x, self._y, self._z)
 
-    def normalized_coords(self):
-        return (self._x_n, self._y_n, self._z_n)
+    def index(self):
+        return self._index
 
 
 class PixelMapIter():
@@ -118,30 +124,11 @@ class PixelMap():
     def __init__(self, pixel_dict):
         self._map = pixel_dict
         self._pixel_map = {}
-        self._current_index = 0
         self._pixel_count = len(self._map)
         self._pixel_mat = []
-        self._x_min = math.inf
-        self._x_max = 0
-        self._y_min = math.inf
-        self._y_max = 0
-        self._z_min = math.inf
-        self._z_max = 0
-
-        for index, coords in self._map.items():
-            x, y, z = coords
-            self._map[index] = (x, y, z)
-            self._pixel_mat.append([x, y, z, 1])
-
-            self._x_min = x if x < self._x_min else self._x_min
-            self._x_max = x if x > self._x_max else self._x_max
-            self._y_min = y if y < self._y_min else self._y_min
-            self._y_max = y if y > self._y_max else self._y_max
-            self._z_min = z if z < self._z_min else self._z_min
-            self._z_max = z if z > self._z_max else self._z_max
-
         for index, pixel in self._map.items():
-            self._pixel_map[index] = Pixel(index, self._x_min, self._x_max, self._y_min, self._y_max, self._z_min, self._z_max, pixel[0], pixel[1], pixel[2])
+            self._pixel_map[index] = Pixel(index, pixel[0], pixel[1], pixel[2])
+            self._pixel_mat.append([pixel[0], pixel[1], pixel[2], 1])
 
     def __iter__(self):
         return PixelMapIter(self._pixel_map)
@@ -155,9 +142,9 @@ class PixelMap():
                     continue
                 index, x, y, z, pov1, pov2 = line.split(',')
                 index = int(index)
-                x = int(x)
-                y = int(y)
-                z = int(z)
+                x = float(x)
+                y = float(y)
+                z = float(z)
 
                 pixel_dict[index] = (x, y, z)
         return PixelMap(pixel_dict)
@@ -165,9 +152,6 @@ class PixelMap():
 
     def count(self):
         return self._pixel_count
-
-    def extents(self):
-        return (self._x_min, self._x_max, self._y_min, self._y_max, self._z_min, self._z_max)
 
     def mat(self):
         return self._pixel_mat

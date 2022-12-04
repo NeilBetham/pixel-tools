@@ -127,7 +127,7 @@ def load_pixel_map(pixel_map_path):
         for line in pixel_csv:
             if 'index' in line:
                 continue
-            index, x, y, z, pov1, pov2 = [int(a) for a in line.split(',')]
+            index, x, y, z, pov1, pov2 = [float(a) for a in line.split(',')]
             pixel_map[index] = (x, y, z, pov1, pov2)
 
     return pixel_map

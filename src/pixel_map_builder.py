@@ -176,8 +176,6 @@ def localize_pixels(light_centers, base_dimensions):
         ycoord = -1
         zcoord = -1
 
-        print(base_dimensions)
-
         if pov1 == 0:
             # This POV is contributing to the X coordinate
             xcoord = light_centers[pov1][pixel_index][1][0][0]
@@ -205,11 +203,56 @@ def localize_pixels(light_centers, base_dimensions):
             ycoord = base_dimensions[0] - light_centers[pov2][pixel_index][1][0][0]
 
         zcoord = (light_centers[pov1][pixel_index][1][0][1] + light_centers[pov2][pixel_index][1][0][1]) / 2
-        zcoord = base_dimensions[0] - zcoord
+        zcoord = base_dimensions[1] - zcoord
 
         pixel_coords.append((pixel_index, (xcoord, ycoord, zcoord, pov1, pov2)))
 
     return pixel_coords
+
+
+def normalize_map(pixel_coords):
+    min_x = math.inf
+    max_x = 0.0
+    min_y = math.inf
+    max_y = 0.0
+    min_z = math.inf
+    max_z = 0.0
+
+    for coord in pixel_coords:
+        x = coord[1][0]
+        y = coord[1][1]
+        z = coord[1][2]
+        if x < min_x:
+            min_x = x
+        if x > max_x:
+            max_x = x
+        if y < min_y:
+            min_y = y
+        if y > max_y:
+            max_y = y
+        if z < min_z:
+            min_z = z
+        if z > max_z:
+            max_z = z
+
+    min_coord = float(min_x if min_x < min_y else min_y)
+    max_coord = float(max_x if max_x > max_y else max_y)
+    coord_range = max_coord - min_coord
+    half_coord_range = coord_range / 2.0
+    mid_coord = half_coord_range + min_coord
+    mid_coord_x = (max_x - min_x) / 2 + min_x
+    mid_coord_y = (max_y - min_y) / 2 + min_y
+
+    normal_pixel_coords = []
+    for coord in pixel_coords:
+        norm_x = (float(coord[1][0]) - mid_coord_x) / half_coord_range
+        norm_y = (float(coord[1][1]) - mid_coord_y) / half_coord_range
+        norm_z = (float(coord[1][2]) - mid_coord) / half_coord_range
+
+        normal_pixel_coords.append((coord[0], (norm_x, norm_y, norm_z, coord[1][3], coord[1][4])))
+
+    return normal_pixel_coords
+
 
 def plot_pixel_distances(pixel_distances):
     distances = [dist[1] for dist in pixel_distances]
@@ -220,6 +263,7 @@ def plot_pixel_distances(pixel_distances):
     plot.title('Distance between pixel pairs')
     plot.show()
 
+
 def plot_pixel_coords(pixel_coords):
     figure = plot.figure()
     axes = plot.axes(projection = '3d')
@@ -229,6 +273,7 @@ def plot_pixel_coords(pixel_coords):
     axes.scatter(x, y, z)
     axes.set_title('Pixel Map')
     plot.show()
+
 
 def pixel_coord_correction(pixel_coords):
     pixel_pair_iter = PairIter(pixel_coords)
@@ -307,11 +352,12 @@ def pixel_coord_correction(pixel_coords):
 
     return fixed_pixels
 
+
 def output_pixel_map_csv(pixel_coords, outfile_name):
     outfile = open(outfile_name, 'w')
     outfile.write("index, x, y, z, pov1, pov2\n")
     for pixel_coord in pixel_coords:
-        outfile.write("%i, %i, %i, %i, %i, %i\n" % (pixel_coord[0], pixel_coord[1][0], pixel_coord[1][1], pixel_coord[1][2], pixel_coord[1][3], pixel_coord[1][4]))
+        outfile.write("%i, %f, %f, %f, %i, %i\n" % (pixel_coord[0], pixel_coord[1][0], pixel_coord[1][1], pixel_coord[1][2], pixel_coord[1][3], pixel_coord[1][4]))
     outfile.close()
 
 
@@ -327,10 +373,10 @@ def main():
 
     pixel_coords = localize_pixels(pov_maps, base_image_dimensions)
     plot_pixel_coords(pixel_coords)
-    output_pixel_map_csv(pixel_coords, os.path.join(os.getcwd(), "pixel_map.raw.csv"))
+    output_pixel_map_csv(normalize_map(pixel_coords), os.path.join(os.getcwd(), "pixel_map.raw.csv"))
     pixel_coords = pixel_coord_correction(pixel_coords)
     plot_pixel_coords(pixel_coords)
-    output_pixel_map_csv(pixel_coords, os.path.join(os.getcwd(), "pixel_map.filtered.csv"))
+    output_pixel_map_csv(normalize_map(pixel_coords), os.path.join(os.getcwd(), "pixel_map.filtered.csv"))
 
 
 if __name__ == "__main__":
