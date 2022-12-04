@@ -10,7 +10,7 @@ import zoneinfo
 import skyfield.api
 import skyfield.almanac
 
-from pixel_animator import main as anim_main
+from pixel_animator_plane_wave import main as anim_main
 
 def compute_sunrise_sunset(location, timescale, ephemeris, tz):
     today = datetime.datetime.now()
