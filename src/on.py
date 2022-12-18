@@ -2,7 +2,7 @@
 
 import time
 
-from pixel_client import  PixelClient
+from client import  Client
 
 PIXEL_COUNT = 500
 BYTE_COUNT = PIXEL_COUNT * 3
@@ -11,7 +11,7 @@ MESSAGE_ON = bytes.fromhex("FF") * BYTE_COUNT
 
 
 def main():
-    client = PixelClient()
+    client = Client()
     sent = client.send_frame(MESSAGE_ON)
 
 if __name__ == "__main__":

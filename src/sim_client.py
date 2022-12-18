@@ -3,7 +3,7 @@
 import os
 import socket
 
-class PixelSimClient():
+class SimClient():
     def __init__(self, socket_path):
         self._socket_path = socket_path
         self._connect()

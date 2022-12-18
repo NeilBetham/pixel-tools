@@ -6,7 +6,7 @@ import pathlib
 import socket
 import time
 
-from pixel_client import PixelClient
+from client import Client
 
 EXPECTED_CAMERA_INDEX = 0
 PIXEL_COUNT = 500
@@ -43,7 +43,7 @@ class CameraControl():
 class PixelMapper():
     def __init__(self, pixel_count):
         self._pixel_count = pixel_count
-        self._ps = PixelClient()
+        self._ps = Client()
         self._cc = CameraControl()
         self._cc.select_device(EXPECTED_CAMERA_INDEX)
         self._ps.send_frame(self.generate_frame('000000', 0))

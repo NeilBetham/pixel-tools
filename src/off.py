@@ -2,7 +2,7 @@
 
 import time
 
-from pixel_client import  PixelClient
+from client import  Client
 
 PIXEL_COUNT = 500
 BYTE_COUNT = PIXEL_COUNT * 3

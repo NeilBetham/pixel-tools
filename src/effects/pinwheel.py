@@ -9,41 +9,45 @@ import time
 from random import random
 
 from animator import Animator
-from pixel_client import PixelClient
-from pixel_sim_client import PixelSimClient
+from client import Client
+from effect_base import EffectBase
+from sim_client import SimClient
 from utils import PixelMap, calc_affine, calc_affine2, hsl_to_rgb
 
 TARGET_FPS = 30
+SPEED = 1
 
-class BeachballEffect():
-    def __init__(self, pixel_map, speed):
-        self._map = pixel_map
-        self._speed = speed
-
+class PinwheelEffect(EffectBase):
+    def reset(self):
+        self._current_map = self._map.transform(calc_affine2(0, 0, 0, 0, 0, -0.5))
         self._progress = 0
-        self._current_map = self._map
-
-        self._rotated_map = self._map.transform(calc_affine2(0, math.pi / 2, 0, -0.75, 0, 0))
-        self._polar_map = {}
-
-        for pixel in self._rotated_map:
-            x, y, z = pixel.coords()
-            self._polar_map[pixel.index()] = math.atan2(y, x) + math.pi
+        self._current_color = (1, 1, 1)
+        self._speed = SPEED
 
     def animate(self, delta_t):
         # Find our current progress
         self._progress = (self._speed * delta_t) + self._progress
-        if self._progress > 2 * math.pi:
-            self._progress = 0
+        if self._progress > math.pi / 2:
+            self._progress = -math.pi / 2
+
+            # Choose a random hue
+            hue = random() * 360.0
+            self._current_color = hsl_to_rgb(hue, 1.0, 1.0)
+
+        # Rotate the tree based on progress
+        self._current_map = self._map.transform(calc_affine(self._progress, 0.0, 0.0))
 
         buffer = bytearray()
+        red, green, blue = self._current_color
         for pixel in self._current_map:
-            current_offset = self._progress * 180 / math.pi
-            pixel_radians = (self._polar_map[pixel.index()] + self._progress) * 180 / math.pi
-            red, green, blue = hsl_to_rgb(pixel_radians, 1.0, 1.0)
-            intensity_data = self.intensity_data(red, green, blue, 1.0)
+            gaussian = self.gaussian(pixel.coords()[2], 0)
+            gaussian2 = self.gaussian(pixel.coords()[1], 0)
+            intensity_data = self.intensity_data(red, green, blue, min(gaussian + gaussian2, 1.0))
             buffer.extend(intensity_data)
         return buffer
+
+    def gaussian(self, value, offset):
+        return math.e ** (-(value + offset) ** 2 * 100)
 
     def intensity_data(self, red, green, blue, intensity):
         return b''.join([
@@ -60,7 +64,7 @@ def main():
         pixel_server = PixelClient()
 
     pixel_map = PixelMap.from_csv(os.getenv("PIXEL_MAP_CSV"))
-    plane_anim = BeachballEffect(pixel_map, 2)
+    plane_anim = PinWheelEffect(pixel_map)
     animator = Animator(plane_anim, pixel_server, TARGET_FPS)
     animator.run()
 

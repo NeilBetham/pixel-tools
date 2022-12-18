@@ -4,7 +4,7 @@ import os
 import socket
 
 
-class PixelClient():
+class Client():
     def __init__(self, ip, port):
         self._ip = ip
         self._port = port
