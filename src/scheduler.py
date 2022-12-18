@@ -10,7 +10,7 @@ import zoneinfo
 import skyfield.api
 import skyfield.almanac
 
-from pixel_animator_plane_wave import main as anim_main
+from coordinator import main as coordinator_main
 
 def compute_sunrise_sunset(location, timescale, ephemeris, tz):
     today = datetime.datetime.now()
@@ -40,7 +40,7 @@ def main():
     location = skyfield.api.wgs84.latlon(float(loc_n), float(loc_w), float(elevation))
 
 
-    anim_proc = multiprocessing.Process(target=anim_main)
+    anim_proc = multiprocessing.Process(target=coordinator_main)
 
     while True:
         # Check when sunrise and sunset happens
