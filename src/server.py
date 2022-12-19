@@ -5,7 +5,7 @@ import socketserver
 import board
 import _rpi_ws281x as ws
 
-PIXEL_COUNT = 500
+PIXEL_COUNT = 1000
 BYTE_COUNT = PIXEL_COUNT * 3
 OFF_FRAME = bytes.fromhex('00') * BYTE_COUNT
 

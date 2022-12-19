@@ -25,7 +25,10 @@ class Client():
         if self._wait_for_rx:
             self._socket.recv(4)
         else:
-            self._socket.recv(1024)
+            try:
+                self._socket.recv(1024, socket.MSG_DONTWAIT)
+            except:
+                pass
         return sent
 
     def _connect(self):
