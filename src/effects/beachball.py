@@ -3,7 +3,6 @@
 import math
 import numpy as np
 import os
-import socket
 import sys
 import time
 from random import random

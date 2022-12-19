@@ -77,7 +77,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == 'sim':
         pixel_server = SimClient('./tree_sim.sock')
     else:
-        pixel_server = Client()
+        pixel_server = Client(False)
 
     pixel_map = PixelMap.from_csv(os.getenv('PIXEL_MAP_CSV'))
 

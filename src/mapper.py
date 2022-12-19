@@ -9,7 +9,7 @@ import time
 from client import Client
 
 EXPECTED_CAMERA_INDEX = 0
-PIXEL_COUNT = 500
+PIXEL_COUNT = 1000
 MESSAGE_OFF = bytes.fromhex("00" * 3 * PIXEL_COUNT)
 MESSAGE_ON = bytes.fromhex("FF" * 3 * PIXEL_COUNT)
 

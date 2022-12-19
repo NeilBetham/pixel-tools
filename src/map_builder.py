@@ -118,15 +118,28 @@ def process_photo(baseline, photo):
 
 def process_pov(pov_path):
     print("Processing POV: {}".format(pov_path))
-    photo_iter = PixelPhotoIter(pov_path)
     light_centers = []
     normalized_light_centers = []
-    baseline = cv2.imread(os.path.join(pov_path, "baseline.png"), flags=cv2.IMREAD_GRAYSCALE)
-    baseline_rot =cv2.rotate(baseline, cv2.ROTATE_90_CLOCKWISE)
 
-    # First find all the approximate light centers in each image
+    # Average all the photos from the POV together to get a baseline
+    print("Averaging POV to get baseline")
+    average = None
+    photo_iter = PixelPhotoIter(pov_path)
     for photo in photo_iter:
-        light_center = process_photo(baseline_rot, photo)
+        if average is None:
+            average = photo.frame()
+        else:
+            float_frame = photo.frame()
+            average = (average + float_frame) * 0.5
+
+    cv2.imwrite(os.path.join(pov_path, "average.png"), average)
+    average_rot = cv2.rotate(average, cv2.ROTATE_90_CLOCKWISE).clip(min=0, max=255).astype('uint8')
+
+    print("Calculating POV coordinates")
+    # Find all the approximate light centers in each image
+    photo_iter = PixelPhotoIter(pov_path)
+    for photo in photo_iter:
+        light_center = process_photo(average_rot, photo)
         light_centers.append((int(photo.index()), light_center))
 
     return light_centers
