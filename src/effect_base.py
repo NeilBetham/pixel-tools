@@ -31,10 +31,11 @@ class EffectBase():
             if self._fade_out_timer < 0:
                 self._fade_out_active = False
 
-        percent = percent if percent >= 0.0 else 0.0
-        percent = percent if percent <= 1.0 else 1.0
+        if self._fade_in_active or self._fade_out_active:
+            percent = percent if percent >= 0.0 else 0.0
+            percent = percent if percent <= 1.0 else 1.0
+            frame = bytearray([int(float(elem) * percent) for elem in frame])
 
-        frame = bytearray([int(float(elem) * percent) for elem in frame])
         return frame
 
     def fade_in(self, time_s):
