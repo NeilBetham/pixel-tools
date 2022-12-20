@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 class EffectBase():
     def __init__(self, pixel_map):
         self._map = pixel_map
@@ -8,6 +7,8 @@ class EffectBase():
         self._fade_out_timer = 0
         self._fade_out_time = 0
         self._fade_out_active = False
+        self._fade_out_complete = True
+
         self._fade_in_timer = 0
         self._fade_in_time = 0
         self._fade_in_active = False
@@ -18,6 +19,10 @@ class EffectBase():
 
     def animate_base(self, delta_t):
         frame = self.animate(delta_t)
+
+        if self._fade_out_complete:
+            frame = bytearray(len(frame))
+
         percent = 1.0
         if self._fade_in_active:
             self._fade_in_timer -= delta_t
@@ -30,6 +35,7 @@ class EffectBase():
             percent = self._fade_out_timer / self._fade_out_time
             if self._fade_out_timer < 0:
                 self._fade_out_active = False
+                self._fade_out_complete = True
 
         if self._fade_in_active or self._fade_out_active:
             percent = percent if percent >= 0.0 else 0.0
@@ -45,6 +51,7 @@ class EffectBase():
         self._fade_in_timer = time_s
         self._fade_in_time = time_s
         self._fade_in_active = True
+        self._fade_out_complete = False
 
     def fade_out(self, time_s):
         if self._fade_out_active:

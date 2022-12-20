@@ -2,6 +2,7 @@
 
 import os
 import socket
+import time
 
 
 class Client():
@@ -21,7 +22,13 @@ class Client():
         self._socket.close()
 
     def send_frame(self, frame, wait_for_rx=True):
+        send_start = time.time()
         sent = self._socket.sendall(frame)
+        send_stop = time.time()
+
+        if (send_stop - send_start) > 0.010:
+            print("Send blocked for: {}s".format(send_stop - send_start))
+
         if self._wait_for_rx:
             self._socket.recv(4)
         else:
