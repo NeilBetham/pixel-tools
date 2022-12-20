@@ -27,20 +27,21 @@ class EffectBase():
         if self._fade_in_active:
             self._fade_in_timer -= delta_t
             percent = 1.0 - (self._fade_in_timer / self._fade_in_time)
-            if self._fade_in_timer < 0:
-                self._fade_in_active = False
 
         elif self._fade_out_active:
             self._fade_out_timer -= delta_t
             percent = self._fade_out_timer / self._fade_out_time
-            if self._fade_out_timer < 0:
-                self._fade_out_active = False
-                self._fade_out_complete = True
 
         if self._fade_in_active or self._fade_out_active:
             percent = percent if percent >= 0.0 else 0.0
             percent = percent if percent <= 1.0 else 1.0
             frame = bytearray([int(float(elem) * percent) for elem in frame])
+
+        if self._fade_in_active or self._fade_out_active:
+            if self._fade_in_timer < 0:
+                self._fade_in_active = False
+            if self._fade_out_timer < 0:
+                self._fade_out_active = False
 
         return frame
 
