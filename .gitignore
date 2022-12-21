@@ -133,3 +133,9 @@ pixel_maps
 *.swp
 *.csv
 CONFIG
+
+# Ignore Bazel related files
+bazel-bin
+bazel-out
+bazel-pixel-tools
+bazel-testlogs
