@@ -41,8 +41,8 @@ class PinwheelEffect(EffectBase):
         red, green, blue = self._current_color
         for pixel in self._current_map:
             gaussian = self.gaussian(pixel.coords()[2], 0)
-            gaussian2 = self.gaussian(pixel.coords()[1], 0)
-            intensity_data = self.intensity_data(red, green, blue, min(gaussian + gaussian2, 1.0))
+#            gaussian2 = self.gaussian(pixel.coords()[1], 0)
+            intensity_data = self.intensity_data(red, green, blue, min(gaussian, 1.0))
             buffer.extend(intensity_data)
         return buffer
 
