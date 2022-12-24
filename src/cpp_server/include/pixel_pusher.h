@@ -24,10 +24,14 @@ public:
 
   void loop();
 
+  void clear();
+
 private:
   FrameQueue& _frame_queue;
   Task _task;
   ws2811_t _pixels;
+
+  void render_frame(const std::string& frame);
 };
 
 

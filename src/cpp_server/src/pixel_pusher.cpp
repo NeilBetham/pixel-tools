@@ -105,8 +105,6 @@ void compute_symbol_lookup_table() {
     }
 
     symbol_lookup_table[index] = out_symbol;
-
-    fmt::print("Index: {:#010b} - Symbol {:#026b}\n", index, symbol_lookup_table[index]);
   }
 }
 
@@ -120,7 +118,7 @@ void* cpymem(void* dest, void* src, uint32_t size) {
   return dest;
 }
 
-static void dma_start(ws2811_t *ws2811) {
+static void dma_start_custom(ws2811_t *ws2811) {
   ws2811_device_t *device = ws2811->device;
   volatile dma_t *dma = device->dma;
   uint32_t dma_cb_addr = device->dma_cb_addr;
@@ -142,7 +140,7 @@ static void dma_start(ws2811_t *ws2811) {
             RPI_DMA_CS_ACTIVE;
 }
 
-ws2811_return_t ws2811_wait_custom(ws2811_t *ws2811) {
+static ws2811_return_t ws2811_wait_custom(ws2811_t *ws2811) {
 	volatile dma_t *dma = ws2811->device->dma;
 
 	while ((dma->cs & RPI_DMA_CS_ACTIVE) && !(dma->cs & RPI_DMA_CS_ERROR)) {
@@ -157,18 +155,9 @@ ws2811_return_t ws2811_wait_custom(ws2811_t *ws2811) {
 	return WS2811_SUCCESS;
 }
 
-ws2811_return_t ws2811_render_custom(ws2811_t *ws2811) {
+static ws2811_return_t ws2811_render_custom(ws2811_t *ws2811) {
 	volatile uint8_t *pxl_raw = ws2811->device->pxl_raw;
 	ws2811_return_t ret = WS2811_SUCCESS;
-
-	auto dma_wait_start_time = std::chrono::high_resolution_clock::now();
-
-	// Wait for any previous DMA operation to complete.
-	if ((ret = ws2811_wait_custom(ws2811)) != WS2811_SUCCESS) {
-			return ret;
-	}
-
-	auto render_start_time = std::chrono::high_resolution_clock::now();
 
 	for (uint8_t channel_index = 0; channel_index < 1; channel_index++) {
 		ws2811_channel_t *channel = &ws2811->channel[channel_index];
@@ -217,23 +206,11 @@ ws2811_return_t ws2811_render_custom(ws2811_t *ws2811) {
     memcpy(outbuffer_ptr, &buffer[8], 4);
     outbuffer_byte_pos += 24;
 	}
-	auto render_stop_time = std::chrono::high_resolution_clock::now();
 
-	dma_start(ws2811);
-
-	auto dma_start_time = std::chrono::high_resolution_clock::now();
-
-
-	auto render_time = std::chrono::duration_cast<std::chrono::microseconds>(render_stop_time - render_start_time).count();
-	auto wait_time = std::chrono::duration_cast<std::chrono::microseconds>(render_start_time - dma_wait_start_time).count();
-	auto dma_time = std::chrono::duration_cast<std::chrono::microseconds>(dma_start_time - render_stop_time).count();
-
-	std::cout << "RT: " << render_time << "uS, WT: " << wait_time << "uS, DT: " << dma_time << "uS" << std::endl;
+	dma_start_custom(ws2811);
 
 	return ret;
 }
-
-
 
 
 PixelPusher::PixelPusher(FrameQueue& frame_queue) : _frame_queue(frame_queue) {
@@ -285,9 +262,22 @@ void PixelPusher::stop() {
 
 void PixelPusher::loop() {
 	auto new_frame = _frame_queue.get_next_frame();
+  if(new_frame.size() == 0) {
+    clear();
+  } else {
+    render_frame(new_frame);
+  }
+}
+
+void PixelPusher::clear() {
+  std::string off(_pixels.channel[0].count * 3, 0);
+  render_frame(off);
+}
+
+void PixelPusher::render_frame(const std::string& frame) {
 	for(int index = 0; index < LED_COUNT; index++) {
 		int byte_index = index * 3;
-		_pixels.channel[0].leds[index] = ((uint32_t)new_frame[byte_index] << 16) | ((uint32_t)new_frame[byte_index + 1] << 8) | (uint32_t)new_frame[byte_index + 2];
+		_pixels.channel[0].leds[index] = ((uint32_t)frame[byte_index] << 16) | ((uint32_t)frame[byte_index + 1] << 8) | (uint32_t)frame[byte_index + 2];
 	}
 	ws2811_return_t ret = ws2811_render_custom(&_pixels);
 	if(ret != WS2811_SUCCESS) {
@@ -295,6 +285,7 @@ void PixelPusher::loop() {
 		exit(-1);
 	}
 
+  ret = ws2811_wait_custom(&_pixels);
 	if(ret != WS2811_SUCCESS) {
 		log("Failed to wait for frame to display");
 		exit(-1);

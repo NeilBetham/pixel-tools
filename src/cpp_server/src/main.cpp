@@ -11,10 +11,10 @@
 
 
 int main() {
-  std::cout << "Pixel server starting" << std::endl;
   pixel_tools::FrameQueue frame_queue;
   pixel_tools::SocketServer socket_server("0.0.0.0", 7689, frame_queue);
 	pixel_tools::PixelPusher pixel_pusher(frame_queue);
+  pixel_pusher.clear();
 
 	pixel_pusher.run();
   socket_server.run();

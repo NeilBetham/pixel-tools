@@ -124,6 +124,7 @@ void SocketServer::loop() {
       if(recv_bytes < 1) {
         close(_current_src_fd);
         _current_src_fd = -1;
+        _delegate.handle_frame(std::string());
         return;
       }
       read_bytes += recv_bytes;
