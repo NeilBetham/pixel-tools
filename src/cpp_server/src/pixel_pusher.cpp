@@ -34,7 +34,7 @@
 #define OSC_FREQ_PI4                             54000000   // Pi 4 crystal frequency
 
 /* 4 colors (R, G, B + W), 8 bits per byte, 3 symbols per bit + 55uS low for reset signal */
-#define LED_COLOURS                              4
+#define LED_COLOURS                              3
 #define LED_RESET_uS                             55
 #define LED_BIT_COUNT(leds, freq)                ((leds * LED_COLOURS * 8 * 3) + ((LED_RESET_uS * \
                                                   (freq * 3)) / 1000000))
@@ -112,34 +112,52 @@ void compute_symbol_lookup_table() {
 
 
 static void dma_start(ws2811_t *ws2811) {
-    ws2811_device_t *device = ws2811->device;
-    volatile dma_t *dma = device->dma;
-    volatile pcm_t *pcm = device->pcm;
-    uint32_t dma_cb_addr = device->dma_cb_addr;
+  ws2811_device_t *device = ws2811->device;
+  volatile dma_t *dma = device->dma;
+  uint32_t dma_cb_addr = device->dma_cb_addr;
+  volatile dma_cb_t *dma_cb = device->dma_cb;
 
-    dma->cs = RPI_DMA_CS_RESET;
-    usleep(10);
+  dma->cs = RPI_DMA_CS_RESET;
+  usleep(10);
 
-    dma->cs = RPI_DMA_CS_INT | RPI_DMA_CS_END;
-    usleep(10);
+  dma->cs = RPI_DMA_CS_INT | RPI_DMA_CS_END;
+  usleep(10);
 
-    dma->conblk_ad = dma_cb_addr;
-    dma->debug = 7; // clear debug error flags
-    dma->cs = RPI_DMA_CS_WAIT_OUTSTANDING_WRITES |
-              RPI_DMA_CS_PANIC_PRIORITY(15) |
-              RPI_DMA_CS_PRIORITY(15) |
-              RPI_DMA_CS_ACTIVE;
+  dma_cb->txfr_len = PWM_BYTE_COUNT(ws2811->channel[0].count, ws2811->freq);
 
-    if (device->driver_mode == PCM)
-    {
-        pcm->cs |= RPI_PCM_CS_TXON;  // Start transmission
-    }
+  dma->conblk_ad = dma_cb_addr;
+  dma->debug = 7; // clear debug error flags
+  dma->cs = RPI_DMA_CS_WAIT_OUTSTANDING_WRITES |
+            RPI_DMA_CS_PANIC_PRIORITY(0) |
+            RPI_DMA_CS_PRIORITY(0) |
+            RPI_DMA_CS_ACTIVE;
 }
 
+ws2811_return_t ws2811_wait_custom(ws2811_t *ws2811) {
+	volatile dma_t *dma = ws2811->device->dma;
+
+	while ((dma->cs & RPI_DMA_CS_ACTIVE) && !(dma->cs & RPI_DMA_CS_ERROR)) {
+	  usleep(10);
+  }
+
+	if (dma->cs & RPI_DMA_CS_ERROR) {
+		fprintf(stderr, "DMA Error: %08x\n", dma->debug);
+		return WS2811_ERROR_DMA;
+	}
+
+	return WS2811_SUCCESS;
+}
 
 ws2811_return_t ws2811_render_custom(ws2811_t *ws2811) {
 	volatile uint8_t *pxl_raw = ws2811->device->pxl_raw;
 	ws2811_return_t ret = WS2811_SUCCESS;
+
+	auto dma_wait_start_time = std::chrono::high_resolution_clock::now();
+
+	// Wait for any previous DMA operation to complete.
+	if ((ret = ws2811_wait_custom(ws2811)) != WS2811_SUCCESS) {
+			return ret;
+	}
 
 	auto render_start_time = std::chrono::high_resolution_clock::now();
 
@@ -168,7 +186,7 @@ ws2811_return_t ws2811_render_custom(ws2811_t *ws2811) {
 
         if(symbols_in_buffer == 4) {
           // Copy over each word into output buffer
-          uint8_t* outbuffer_ptr = &((uint8_t *)pxl_raw)[outbuffer_byte_pos];
+          uint8_t* outbuffer_ptr = &((uint8_t*)pxl_raw)[outbuffer_byte_pos];
           memcpy(outbuffer_ptr, &buffer[0], 4);
           outbuffer_ptr += 8;
           memcpy(outbuffer_ptr, &buffer[4], 4);
@@ -182,23 +200,16 @@ ws2811_return_t ws2811_render_custom(ws2811_t *ws2811) {
 	}
 	auto render_stop_time = std::chrono::high_resolution_clock::now();
 
-	// Wait for any previous DMA operation to complete.
-	if ((ret = ws2811_wait(ws2811)) != WS2811_SUCCESS) {
-			return ret;
-	}
-
-	auto wait_stop_time = std::chrono::high_resolution_clock::now();
-
 	dma_start(ws2811);
 
 	auto dma_start_time = std::chrono::high_resolution_clock::now();
 
 
 	auto render_time = std::chrono::duration_cast<std::chrono::microseconds>(render_stop_time - render_start_time).count();
-	auto wait_time = std::chrono::duration_cast<std::chrono::microseconds>(wait_stop_time - render_stop_time).count();
-	auto dma_time = std::chrono::duration_cast<std::chrono::microseconds>(dma_start_time - wait_stop_time).count();
+	auto wait_time = std::chrono::duration_cast<std::chrono::microseconds>(render_start_time - dma_wait_start_time).count();
+	auto dma_time = std::chrono::duration_cast<std::chrono::microseconds>(dma_start_time - render_stop_time).count();
 
-	std::cout << "RT: " << render_time << ", WT: " << wait_time << ", DT: " << dma_time << std::endl;
+	std::cout << "RT: " << render_time << "uS, WT: " << wait_time << "uS, DT: " << dma_time << "uS" << std::endl;
 
 	return ret;
 }
