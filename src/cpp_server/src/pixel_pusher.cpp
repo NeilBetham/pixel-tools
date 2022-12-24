@@ -110,6 +110,15 @@ void compute_symbol_lookup_table() {
   }
 }
 
+void* cpymem(void* dest, void* src, uint32_t size) {
+  uint8_t* dest_bytes = (uint8_t*)dest;
+  uint8_t* src_bytes = (uint8_t*)src;
+  for(uint32_t index = 0; index < size; index++) {
+    uint32_t dest_index = size - index - 1;
+    dest_bytes[dest_index] = src_bytes[index];
+  }
+  return dest;
+}
 
 static void dma_start(ws2811_t *ws2811) {
   ws2811_device_t *device = ws2811->device;
@@ -181,22 +190,32 @@ ws2811_return_t ws2811_render_custom(ws2811_t *ws2811) {
       // Accumulate symbols and them add them to the output buffer
 			for (uint8_t color_index = 0; color_index < color_channels; color_index++) {
         uint32_t symbol = symbol_lookup_table[color[color_index]];
-        memcpy(&buffer[0] + (symbols_in_buffer * 3), &symbol, 3);
+        uint8_t buffer_pos = symbols_in_buffer * 3;
+        cpymem(&buffer[buffer_pos], &symbol, 3);
         symbols_in_buffer++;
 
         if(symbols_in_buffer == 4) {
           // Copy over each word into output buffer
-          uint8_t* outbuffer_ptr = &((uint8_t*)pxl_raw)[outbuffer_byte_pos];
-          memcpy(outbuffer_ptr, &buffer[0], 4);
-          outbuffer_ptr += 8;
-          memcpy(outbuffer_ptr, &buffer[4], 4);
-          outbuffer_ptr += 8;
-          memcpy(outbuffer_ptr, &buffer[8], 4);
-          outbuffer_byte_pos += 24;
+          cpymem(&((uint8_t*)pxl_raw)[outbuffer_byte_pos], &buffer[0], 4);
+          outbuffer_byte_pos += 8;
+          cpymem(&((uint8_t*)pxl_raw)[outbuffer_byte_pos], &buffer[4], 4);
+          outbuffer_byte_pos += 8;
+          cpymem(&((uint8_t*)pxl_raw)[outbuffer_byte_pos], &buffer[8], 4);
+          outbuffer_byte_pos += 8;
           symbols_in_buffer = 0;
+          memset(&buffer[0], 0, sizeof(buffer));
         }
-			}
+		  }
 		}
+
+    // Copy over any stragglers into output buffer
+    uint8_t* outbuffer_ptr = &((uint8_t*)pxl_raw)[outbuffer_byte_pos];
+    memcpy(outbuffer_ptr, &buffer[0], 4);
+    outbuffer_ptr += 8;
+    memcpy(outbuffer_ptr, &buffer[4], 4);
+    outbuffer_ptr += 8;
+    memcpy(outbuffer_ptr, &buffer[8], 4);
+    outbuffer_byte_pos += 24;
 	}
 	auto render_stop_time = std::chrono::high_resolution_clock::now();
 
