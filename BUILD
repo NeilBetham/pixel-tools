@@ -8,6 +8,7 @@ cc_library(
   ],
   deps = [
     "@rpi_ws281x//:rpi_ws281x",
+    "@fmt//:fmt",
   ],
 )
 

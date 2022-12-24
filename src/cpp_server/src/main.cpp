@@ -13,7 +13,7 @@
 int main() {
   std::cout << "Pixel server starting" << std::endl;
   pixel_tools::FrameQueue frame_queue;
-  pixel_tools::SocketServer socket_server("0.0.0.0", 7777, frame_queue);
+  pixel_tools::SocketServer socket_server("0.0.0.0", 7689, frame_queue);
 	pixel_tools::PixelPusher pixel_pusher(frame_queue);
 
 	pixel_pusher.run();

@@ -12,7 +12,7 @@ from client import Client
 from sim_client import SimClient
 from utils import PixelMap
 
-TARGET_FPS = 15
+TARGET_FPS = 30
 MIN_EFFECT_TIME = 30
 MAX_EFFECT_TIME = 300
 FADE_EFFECT_TIME = 5
