@@ -38,7 +38,7 @@ def main():
             if "index" in line:
                 continue
             index, x, y, z, pov1, pov2 = line.split(',')
-            pixel_map_dict[index] = (int(x), int(y), int(z), int(pov1), int(pov2))
+            pixel_map_dict[index] = (float(x), float(y), float(z), int(pov1), int(pov2))
 
     plot_pixel_coords(pixel_map_dict)
 

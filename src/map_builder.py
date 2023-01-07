@@ -34,6 +34,8 @@ class POVAverager():
         for photo in photos_to_average:
             if average is None:
                 average = photo.frame()
+            elif photo == self._photos[index]:
+                continue
             else:
                 float_frame = photo.frame()
                 average = (average + float_frame) * 0.5
