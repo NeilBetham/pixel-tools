@@ -10,11 +10,45 @@ import pathlib
 from pprint import pprint
 
 # Inspiration from https://github.com/standupmaths
-# NOTE: This script assumes 4 POVs spaced by 90 degress by default
+# NOTE: This script assumes 4 POVs spaced 90 degress apart by default
 
 
 CORRECT_DISTANCE_PERCENTAGE = 0.6
 AVERAGE_DISTANCE_IN_A_SPHERE = 0.75
+BASELINE_AVERAGE_WINDOW = 10
+
+
+class POVAverager():
+    def __init__(self, photos_path):
+        self._baselines = []
+        self._photos_path = photos_path
+        self._photos = []
+
+        for photo in PixelPhotoIter(photos_path):
+            self._photos.append(photo)
+
+    def average_at(self, index):
+        start_index, stop_index = self._average_indexes_at(index)
+        photos_to_average = self._photos[start_index:stop_index]
+        average = None
+        for photo in photos_to_average:
+            if average is None:
+                average = photo.frame()
+            else:
+                float_frame = photo.frame()
+                average = (average + float_frame) * 0.5
+        return average.clip(min=0, max=255).astype('uint8')
+
+    def _average_indexes_at(self, index):
+        start_index = index - (BASELINE_AVERAGE_WINDOW / 2)
+        if start_index < 0:
+            start_index = 0
+        stop_index = start_index + BASELINE_AVERAGE_WINDOW
+        if stop_index > (len(self._photos)):
+            stop_index = len(self._photos)
+            start_index = stop_index - BASELINE_AVERAGE_WINDOW
+        return (int(start_index), int(stop_index))
+
 
 class Photo():
     def __init__(self, photo_path):
@@ -105,13 +139,16 @@ class PairIter():
         else:
             raise StopIteration
 
-def process_photo(baseline, photo):
+def process_photo(pov_averager, index, photo):
+    baseline = pov_averager.average_at(index)
+    baseline = cv2.rotate(baseline, cv2.ROTATE_90_CLOCKWISE)
     rotated = cv2.rotate(photo.frame(), cv2.ROTATE_90_CLOCKWISE)
     diff = cv2.subtract(rotated, baseline)
     diff_blurred = cv2.GaussianBlur(diff, (11, 11), 0)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(diff_blurred)
     annotated = diff_blurred.copy()
     annotated = cv2.drawMarker(annotated, max_loc, (255, 100, 100), cv2.MARKER_CROSS, thickness=2)
+    cv2.imwrite(photo.output_path("base"), baseline)
     cv2.imwrite(photo.output_path("anno"), annotated)
     cv2.imwrite(photo.output_path("diff"), diff_blurred)
     return (max_loc, max_val)
@@ -122,24 +159,13 @@ def process_pov(pov_path):
     normalized_light_centers = []
 
     # Average all the photos from the POV together to get a baseline
-    print("Averaging POV to get baseline")
-    average = None
-    photo_iter = PixelPhotoIter(pov_path)
-    for photo in photo_iter:
-        if average is None:
-            average = photo.frame()
-        else:
-            float_frame = photo.frame()
-            average = (average + float_frame) * 0.5
-
-    cv2.imwrite(os.path.join(pov_path, "average.png"), average)
-    average_rot = cv2.rotate(average, cv2.ROTATE_90_CLOCKWISE).clip(min=0, max=255).astype('uint8')
+    pov_averager = POVAverager(pov_path)
 
     print("Calculating POV coordinates")
     # Find all the approximate light centers in each image
     photo_iter = PixelPhotoIter(pov_path)
-    for photo in photo_iter:
-        light_center = process_photo(average_rot, photo)
+    for index, photo in enumerate(photo_iter):
+        light_center = process_photo(pov_averager, index, photo)
         light_centers.append((int(photo.index()), light_center))
 
     return light_centers
