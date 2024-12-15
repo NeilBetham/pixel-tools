@@ -42,6 +42,7 @@ class Client():
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((self._ip, self._port))
         if self._wait_for_rx:
-            self._socket.setblocking(False)
+            self._socket.setblocking(True)
+            self._socket.settimeout(None)
 
 

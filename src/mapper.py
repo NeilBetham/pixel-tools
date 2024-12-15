@@ -62,8 +62,15 @@ class PixelMapper():
 
     def map(self):
         self._cc.select_device(EXPECTED_CAMERA_INDEX)
+        range_stop = 4
+        range_start = 0
 
-        for quadrant in range(4):
+        manual_quadrant = input("Input index for manual quadrant or none for all 4: ")
+        if manual_quadrant != "none":
+            range_start = int(manual_quadrant)
+            range_stop = range_start + 1
+
+        for quadrant in range(range_start, range_stop):
             print("Imaging Quadrant {}".format(quadrant))
             self._ps.send_frame(bytes.fromhex('FFFFFF') * PIXEL_COUNT)
             input("Press enter when ready...")

@@ -143,8 +143,8 @@ class PairIter():
 
 def process_photo(pov_averager, index, photo):
     baseline = pov_averager.average_at(index)
-    baseline = cv2.rotate(baseline, cv2.ROTATE_90_CLOCKWISE)
-    rotated = cv2.rotate(photo.frame(), cv2.ROTATE_90_CLOCKWISE)
+    baseline = cv2.rotate(baseline, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    rotated = cv2.rotate(photo.frame(), cv2.ROTATE_90_COUNTERCLOCKWISE)
     diff = cv2.subtract(rotated, baseline)
     diff_blurred = cv2.GaussianBlur(diff, (11, 11), 0)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(diff_blurred)
