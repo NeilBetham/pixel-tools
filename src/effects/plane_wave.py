@@ -64,14 +64,18 @@ class PlaneWaveEffect(EffectBase):
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == 'sim':
-        pixel_server = PixelSimClient("./tree_sim.sock")
+        pixel_server = SimClient("./tree_sim.sock")
     else:
-        pixel_server = PixelClient()
+        pixel_server = Client(False)
 
     pixel_map = PixelMap.from_csv(os.getenv("PIXEL_MAP_CSV"))
     plane_anim = PlaneWaveEffect(pixel_map)
-    animator = Animator(plane_anim, pixel_server, TARGET_FPS)
-    animator.run()
+    plane_anim.fade_in(1)
+    animator = Animator(TARGET_FPS)
+    animator.set_animator_target(plane_anim)
+    animator.set_pixel_target(pixel_server)
+    while True:
+        animator.run()
 
 if __name__ == "__main__":
     main()

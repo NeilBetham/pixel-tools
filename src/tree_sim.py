@@ -157,7 +157,7 @@ def update_loop():
     while VIEWER is None:
         if not QUIT.locked():
             return
-        time.sleep(0.01)
+        time.sleep(0.1)
 
     while QUIT.locked():
         frame = b''
@@ -195,12 +195,12 @@ def main():
     update_thread.start()
 
     while SCENE is None and QUIT.locked():
-        time.sleep(0.01)
+        time.sleep(0.1)
     VIEWER = pyrender.Viewer(SCENE, auto_start=False, point_size=10, use_raymond_lighting=True, light_intensity=3000000)
     pprint(VIEWER.render_flags)
     VIEWER.start()
     while VIEWER.is_active:
-        time.sleep(0.01)
+        time.sleep(0.1)
     if QUIT.locked():
         QUIT.release()
     update_thread.join()

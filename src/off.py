@@ -11,7 +11,7 @@ MESSAGE_ON = bytes.fromhex("FF") * BYTE_COUNT
 
 
 def main():
-    client = PixelClient()
+    client = Client()
     sent = client.send_frame(MESSAGE_OFF)
 
 if __name__ == "__main__":

@@ -1,0 +1,5 @@
+matplotlib==3.10.0
+numpy==1.26.4
+opencv-python==4.10.0.84
+trimesh==4.5.3
+pyrender @ git+https://github.com/mmatl/pyrender.git@a59963e
