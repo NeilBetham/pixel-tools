@@ -20,6 +20,7 @@ TARGET_FPS = 1
 CELL_SIZE = 0.25
 SPEED = 0.75
 
+#TODO: Fade from one game state to the next and optimize pixel drawing
 
 # 4555 or 5766
 class GameOfLife3D():
