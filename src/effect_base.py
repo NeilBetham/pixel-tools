@@ -3,6 +3,7 @@
 class EffectBase():
     def __init__(self, pixel_map):
         self._map = pixel_map
+        self.setup()
         self.reset()
         self._fade_out_timer = 0
         self._fade_out_time = 0
@@ -12,6 +13,9 @@ class EffectBase():
         self._fade_in_timer = 0
         self._fade_in_time = 0
         self._fade_in_active = False
+
+    def setup(self):
+        pass
 
     def animate(self, delta_t):
         # Do all animation related work here, return the byte string to be displayed
