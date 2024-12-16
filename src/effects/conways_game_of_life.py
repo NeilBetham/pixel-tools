@@ -191,7 +191,7 @@ class ConwaysGameOfLifeEffect(EffectBase):
                 pixel_buffer.extend(self._off_pixel)
 
         # Step the sim for the next render
-        if self._timer > 1:
+        if self._timer > 2:
             self._timer = 0
 
             # Do some checks to keep things interesting since something could be happening "off screen"
@@ -201,7 +201,7 @@ class ConwaysGameOfLifeEffect(EffectBase):
                 self._visible_live_cells_false_count += 1
 
             self._live_pixel_history.append(live_pixels)
-            if len(self._live_pixel_history) > 5:
+            if len(self._live_pixel_history) > 2:
                 self._live_pixel_history.pop(0)
                 if all([ph == self._live_pixel_history[0] for ph in self._live_pixel_history]):
                     self._visible_live_cells_false_count = 5
@@ -209,7 +209,6 @@ class ConwaysGameOfLifeEffect(EffectBase):
 
             # Check if this iteration has died out
             if len(list(self._game.live_cells())) <= 0 or self._visible_live_cells_false_count >= 5:
-                print("Game dead, resetting")
                 self.reset()
 
             self._game.step()
